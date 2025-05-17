@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+
 import 'categories_page.dart';
 
 class GameplayPage extends StatelessWidget {
@@ -85,7 +86,7 @@ class GameplayPage extends StatelessWidget {
               ),
               SafeArea(
                 child: Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 50),
+                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 30),
 
                   child: ElevatedButton(
                     onPressed: () {

@@ -109,9 +109,11 @@ class _QuestionsPageState extends State<QuestionsPage> {
         selectedAnswers: selectedAnswers,
       );
 
-      await StrapiService().updateCaseStatusAndScore(
+      await StrapiService().saveCaseProgress(
         caseTitle: widget.selectedCase['title'],
-        finalScore: finalScore,
+        userEmail: "bdeekshith6@gmail.com", // replace later
+        score: finalScore,
+        status: "Completed",
       );
 
       // Submit directly — don't increment index

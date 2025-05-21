@@ -33,20 +33,16 @@ class _CasesPageState extends State<CasesPage> {
 
       for (var caseItem in result) {
         final title = caseItem['title'] ?? '';
-        final playSession = await StrapiService().fetchPlaySession(
+
+        final caseProgress = await StrapiService().fetchCaseProgress(
           caseTitle: title,
-          userEmail: "bdeekshith6@gmail.com", // Replace with logged-in user
+          userEmail: "bdeekshith6@gmail.com", // replace later
         );
 
         updatedCases.add({
           ...caseItem,
-          'score': playSession?['total_score'] ?? 0,
-          'case_status':
-              playSession == null
-                  ? 'Not started'
-                  : (playSession['completed'] == true
-                      ? 'Completed'
-                      : 'In progress'),
+          'score': caseProgress?['score'] ?? 0,
+          'case_status': caseProgress?['case_status'] ?? 'Not started',
         });
       }
 

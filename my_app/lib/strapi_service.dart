@@ -219,4 +219,48 @@ class StrapiService {
       throw Exception("❌ Failed to update case: ${updateResponse.body}");
     }
   }
+
+  Future<void> saveCaseProgress({
+    required String caseTitle,
+    required String userEmail,
+    required int score,
+    required String status,
+  }) async {
+    final url = Uri.parse('$baseUrl/api/case-progresses'); // use correct plural
+    final response = await http.post(
+      url,
+      headers: {"Content-Type": "application/json"},
+      body: jsonEncode({
+        "data": {
+          "case_title": caseTitle,
+          "user_email": userEmail,
+          "score": score,
+          "case_status": status,
+        },
+      }),
+    );
+
+    if (response.statusCode != 200 && response.statusCode != 201) {
+      throw Exception("❌ Failed to save case progress: ${response.body}");
+    }
+  }
+
+  Future<Map<String, dynamic>?> fetchCaseProgress({
+    required String caseTitle,
+    required String userEmail,
+  }) async {
+    final url = Uri.parse(
+      '$baseUrl/api/case-progresses?filters[case_title][\$eq]=$caseTitle&filters[user_email][\$eq]=$userEmail',
+    );
+
+    final response = await http.get(url);
+
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body)['data'];
+      if (data != null && data.isNotEmpty) {
+        return data[0]['attributes'];
+      }
+    }
+    return null;
+  }
 }

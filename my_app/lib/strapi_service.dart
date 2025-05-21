@@ -1,7 +1,7 @@
 // This file contains the StrapiService class, which handles all API calls to the Strapi backend.
 // It includes methods to fetch cases by category, fetch questions by case ID,
 // fetch cheerleaders, create play sessions, create case results, and fetch prompt images.
-// The class uses the http package to make GET and POST requests to the Strapi API.
+// The class uses the http package to make GET and POST requests to the Strapi API.ss
 // The methods return the data in a structured format, making it easy to use in the Flutter app.
 
 import 'dart:convert';

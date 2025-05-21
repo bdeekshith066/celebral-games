@@ -1,0 +1,21 @@
+{
+  "collectionName": "components_shared_questions",
+  "info": {
+    "displayName": "question"
+  },
+  "options": {},
+  "attributes": {
+    "text": {
+      "type": "string"
+    },
+    "options": {
+      "type": "json"
+    },
+    "correct_option": {
+      "type": "integer"
+    },
+    "hint": {
+      "type": "string"
+    }
+  }
+}

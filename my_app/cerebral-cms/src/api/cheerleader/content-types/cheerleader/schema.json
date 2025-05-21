@@ -1,0 +1,30 @@
+{
+  "kind": "collectionType",
+  "collectionName": "cheerleaders",
+  "info": {
+    "singularName": "cheerleader",
+    "pluralName": "cheerleaders",
+    "displayName": "cheerleader"
+  },
+  "options": {
+    "draftAndPublish": true
+  },
+  "attributes": {
+    "name": {
+      "type": "string"
+    },
+    "description": {
+      "type": "string"
+    },
+    "image": {
+      "allowedTypes": [
+        "images",
+        "files",
+        "videos",
+        "audios"
+      ],
+      "type": "media",
+      "multiple": false
+    }
+  }
+}

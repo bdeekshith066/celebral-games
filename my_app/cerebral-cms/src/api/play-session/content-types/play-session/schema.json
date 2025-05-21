@@ -1,0 +1,36 @@
+{
+  "kind": "collectionType",
+  "collectionName": "play_sessions",
+  "info": {
+    "singularName": "play-session",
+    "pluralName": "play-sessions",
+    "displayName": "Play Session",
+    "description": ""
+  },
+  "options": {
+    "draftAndPublish": true
+  },
+  "attributes": {
+    "cheerleader": {
+      "type": "string"
+    },
+    "case_title": {
+      "type": "string"
+    },
+    "started_at": {
+      "type": "datetime"
+    },
+    "user_email": {
+      "type": "email"
+    },
+    "total_score": {
+      "type": "integer"
+    },
+    "completed": {
+      "type": "boolean"
+    },
+    "selected_answer": {
+      "type": "json"
+    }
+  }
+}

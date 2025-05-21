@@ -1,0 +1,26 @@
+{
+  "kind": "collectionType",
+  "collectionName": "case_results",
+  "info": {
+    "singularName": "case-result",
+    "pluralName": "case-results",
+    "displayName": "case-result"
+  },
+  "options": {
+    "draftAndPublish": true
+  },
+  "attributes": {
+    "case_title": {
+      "type": "string"
+    },
+    "cheerleader": {
+      "type": "string"
+    },
+    "score_total": {
+      "type": "integer"
+    },
+    "score_out_of": {
+      "type": "integer"
+    }
+  }
+}

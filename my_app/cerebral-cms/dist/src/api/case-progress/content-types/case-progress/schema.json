@@ -1,0 +1,31 @@
+{
+    "kind": "collectionType",
+    "collectionName": "case_progresses",
+    "info": {
+        "singularName": "case-progress",
+        "pluralName": "case-progresses",
+        "displayName": "case-progress"
+    },
+    "options": {
+        "draftAndPublish": true
+    },
+    "attributes": {
+        "case_title": {
+            "type": "string"
+        },
+        "user_email": {
+            "type": "email"
+        },
+        "score": {
+            "type": "integer"
+        },
+        "case_status": {
+            "type": "enumeration",
+            "enum": [
+                "Not started",
+                "In progress",
+                "Completed"
+            ]
+        }
+    }
+}

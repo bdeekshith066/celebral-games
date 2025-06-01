@@ -29,9 +29,26 @@ class _CasesPageState extends State<CasesPage> {
       final result = await StrapiService().fetchCasesByCategory(
         widget.category,
       );
+      final updatedCases = <Map<String, dynamic>>[];
+
+      for (var caseItem in result) {
+        final title = caseItem['title'] ?? '';
+
+        final caseProgress = await StrapiService().fetchCaseProgress(
+          caseTitle: title,
+          userEmail: "bdeekshith6@gmail.com", // Replace with actual user
+        );
+
+        updatedCases.add({
+          ...caseItem,
+          'score': caseProgress?['score'] ?? 0,
+          'case_status': caseProgress?['case_status'] ?? 'Not started',
+        });
+      }
+
       if (!mounted) return;
       setState(() {
-        cases = result;
+        cases = updatedCases;
         isLoading = false;
       });
     } catch (e) {
@@ -60,9 +77,9 @@ class _CasesPageState extends State<CasesPage> {
                 children: [
                   Expanded(
                     child: ListView.separated(
-                      padding: const EdgeInsets.fromLTRB(16, 16, 16, 80),
+                      padding: const EdgeInsets.fromLTRB(16, 10, 16, 16),
                       itemCount: cases.length,
-                      separatorBuilder: (_, __) => const SizedBox(height: 10),
+                      separatorBuilder: (_, __) => const SizedBox(height: 14),
                       itemBuilder: (context, index) {
                         final caseItem = cases[index];
                         final title = caseItem['title'] ?? '';
@@ -97,7 +114,6 @@ class _CasesPageState extends State<CasesPage> {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
-                                // Left Side: Title + Status
                                 Expanded(
                                   child: Column(
                                     crossAxisAlignment:
@@ -126,10 +142,7 @@ class _CasesPageState extends State<CasesPage> {
                                     ],
                                   ),
                                 ),
-
                                 const SizedBox(width: 16),
-
-                                // Right Side: Score
                                 Column(
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
@@ -158,32 +171,38 @@ class _CasesPageState extends State<CasesPage> {
                       },
                     ),
                   ),
+                  const SizedBox(height: 16),
                 ],
               ),
-      bottomNavigationBar: SafeArea(
-        minimum: const EdgeInsets.all(16),
-        child: ElevatedButton(
-          onPressed:
-              selectedCase != null
-                  ? () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder:
-                            (_) => CheerleaderPage(selectedCase: selectedCase!),
-                      ),
-                    );
-                  }
-                  : null,
-          style: ElevatedButton.styleFrom(
-            backgroundColor: Colors.blue,
-            foregroundColor: Colors.white,
-            minimumSize: const Size(double.infinity, 50),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(8),
+      bottomNavigationBar: Container(
+        padding: const EdgeInsets.fromLTRB(16, 12, 16, 30), // ← bottom lifted!
+        color: Colors.white, // optional: match scaffold background
+        child: SafeArea(
+          top: false,
+          child: ElevatedButton(
+            onPressed:
+                selectedCase != null
+                    ? () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder:
+                              (_) =>
+                                  CheerleaderPage(selectedCase: selectedCase!),
+                        ),
+                      );
+                    }
+                    : null,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.blue,
+              foregroundColor: Colors.white,
+              minimumSize: const Size(double.infinity, 50),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
             ),
+            child: const Text("Start case", style: TextStyle(fontSize: 16)),
           ),
-          child: const Text("Start case", style: TextStyle(fontSize: 16)),
         ),
       ),
     );

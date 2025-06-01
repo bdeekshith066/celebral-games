@@ -1,0 +1,27 @@
+{
+  "kind": "collectionType",
+  "collectionName": "prompt_images",
+  "info": {
+    "singularName": "prompt-image",
+    "pluralName": "prompt-images",
+    "displayName": "PromptImage"
+  },
+  "options": {
+    "draftAndPublish": true
+  },
+  "attributes": {
+    "title": {
+      "type": "string"
+    },
+    "pic": {
+      "allowedTypes": [
+        "images",
+        "files",
+        "videos",
+        "audios"
+      ],
+      "type": "media",
+      "multiple": false
+    }
+  }
+}

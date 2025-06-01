@@ -1,0 +1,51 @@
+{
+  "kind": "collectionType",
+  "collectionName": "cases",
+  "info": {
+    "singularName": "case",
+    "pluralName": "cases",
+    "displayName": "Case",
+    "description": ""
+  },
+  "options": {
+    "draftAndPublish": true
+  },
+  "attributes": {
+    "title": {
+      "type": "string"
+    },
+    "difficulty": {
+      "type": "enumeration",
+      "enum": [
+        "easy",
+        "medium",
+        "hard"
+      ]
+    },
+    "prompt": {
+      "type": "blocks"
+    },
+    "category": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::category.category",
+      "inversedBy": "cases"
+    },
+    "question": {
+      "type": "component",
+      "repeatable": true,
+      "component": "shared.question"
+    },
+    "score": {
+      "type": "integer"
+    },
+    "case_status": {
+      "type": "enumeration",
+      "enum": [
+        "Completed",
+        "Not started",
+        "In progress"
+      ]
+    }
+  }
+}

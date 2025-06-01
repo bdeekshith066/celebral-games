@@ -34,11 +34,13 @@ class CasePromptPage extends StatelessWidget {
           onPressed: () => Navigator.pop(context),
         ),
       ),
+
       body: Padding(
         padding: const EdgeInsets.all(20),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            const SizedBox(height: 10),
             // Case Title
             Text(
               "Case: ${selectedCase['title'] ?? 'Untitled'}",
@@ -46,13 +48,25 @@ class CasePromptPage extends StatelessWidget {
             ),
             const SizedBox(height: 20),
 
+            SizedBox(
+              width: MediaQuery.of(context).size.width,
+              height: 260, // You can adjust the height as needed
+              child: SvgPicture.network(
+                'http://192.168.0.145:1337/uploads/case_prompt_a778b6d986.svg',
+                fit: BoxFit.cover,
+                placeholderBuilder:
+                    (_) => const Center(child: CircularProgressIndicator()),
+              ),
+            ),
+            const SizedBox(height: 20),
+
             // Prompt text
             Text(
               "Case prompt: $promptText",
-              style: const TextStyle(fontSize: 16),
+              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
 
-            const SizedBox(height: 20),
+            const SizedBox(height: 40),
 
             // Chat bubble + Cheerleader icon
             Stack(
@@ -104,6 +118,8 @@ class CasePromptPage extends StatelessWidget {
 
             const SizedBox(height: 40),
 
+            // Timer UI
+            const SizedBox(height: 25),
             ElevatedButton(
               onPressed: () async {
                 try {
@@ -111,6 +127,7 @@ class CasePromptPage extends StatelessWidget {
                     cheerleader: selectedCheerleader,
                     caseTitle: selectedCase['title'] ?? 'Untitled',
                     startedAt: DateTime.now(),
+                    userEmail: "bdeekshith6@gmail.com",
                   );
 
                   if (!context.mounted) return;
@@ -145,22 +162,20 @@ class CasePromptPage extends StatelessWidget {
             ),
 
             const SizedBox(height: 20),
-
-            // Timer UI
             Center(
               child: Column(
                 children: [
                   Container(
                     padding: const EdgeInsets.symmetric(
-                      horizontal: 32,
-                      vertical: 14,
+                      horizontal: 24,
+                      vertical: 10,
                     ),
                     decoration: BoxDecoration(
                       color: Colors.grey[200],
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: const Text(
-                      "00",
+                      "400",
                       style: TextStyle(
                         fontSize: 20,
                         fontWeight: FontWeight.bold,

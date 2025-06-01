@@ -181,3 +181,51 @@
 //     );
 //   }
 // }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+//  Future<void> createPlaySession({
+//     required String cheerleader,
+//     required String caseTitle,
+//     required DateTime startedAt,
+//     required String userEmail,
+//     int score = 0,
+//     bool completed = false,
+//     List<dynamic> selectedAnswers = const [],s
+//   }) async {
+//     final String baseUrl = 'http://192.168.0.145:1337';
+//     final url = Uri.parse('$baseUrl/api/play-sessions');
+//     final response = await http.post(
+//       url,
+//       headers: {"Content-Type": "application/json"},
+//       body: jsonEncode({
+//         "data": {
+//           "cheerleader": cheerleader,
+//           "case_title": caseTitle,
+//           "started_at": startedAt.toIso8601String(),
+//           "user_email": userEmail,
+//           "total_score": score,
+//           "completed": completed,
+//           "selected_answer": selectedAnswers,
+//         },
+//       }),
+//     );
+
+//     if (response.statusCode != 200 && response.statusCode != 201) {
+//       throw Exception("Failed to create play session: ${response.body}");
+//     }
+//   }

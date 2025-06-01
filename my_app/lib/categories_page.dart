@@ -17,9 +17,7 @@ class _CategoriesPageState extends State<CategoriesPage> {
   Map<String, List<Map<String, dynamic>>> groupedCategories = {};
   bool isLoading = true;
 
-  final String baseUrl =
-      'http://192.168.68.106:1337'; // Updated local Strapi IP
-  // Your local Strapi
+  final String baseUrl = 'http://192.168.0.145:1337';
 
   @override
   void initState() {
@@ -48,7 +46,7 @@ class _CategoriesPageState extends State<CategoriesPage> {
           grouped[group]!.add({'name': name, 'id': id, 'caseCount': 3});
         }
 
-        if (!mounted) return; // ✅ ADDED HERE
+        if (!mounted) return;
         setState(() {
           groupedCategories = grouped;
           isLoading = false;
@@ -57,7 +55,7 @@ class _CategoriesPageState extends State<CategoriesPage> {
         throw Exception('Status: ${response.statusCode}');
       }
     } catch (e) {
-      if (!mounted) return; // ✅ ADD THIS TOO
+      if (!mounted) return;
       setState(() => isLoading = false);
       ScaffoldMessenger.of(
         context,
@@ -78,50 +76,63 @@ class _CategoriesPageState extends State<CategoriesPage> {
       body:
           isLoading
               ? const Center(child: CircularProgressIndicator())
-              : Padding(
-                padding: const EdgeInsets.all(16.0),
+              : SafeArea(
                 child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    ...groupedCategories.entries.map((entry) {
-                      return _categorySection(
-                        entry.key,
-                        entry.value.map((cat) {
-                          return _categoryItem(
-                            cat['name'],
-                            "${cat['caseCount']} cases",
-                            Icons.book,
-                          );
-                        }).toList(),
-                      );
-                    }),
-                    const SizedBox(height: 30),
-                    ElevatedButton(
-                      onPressed:
-                          selectedCategory != null
-                              ? () {
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder:
-                                        (_) => CasesPage(
-                                          category: selectedCategory!,
-                                        ),
-                                  ),
-                                );
-                              }
-                              : null,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.blue,
-                        foregroundColor: Colors.white,
-                        minimumSize: const Size(double.infinity, 50),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
+                    // Scrollable content
+                    Expanded(
+                      child: SingleChildScrollView(
+                        padding: const EdgeInsets.fromLTRB(16, 0, 16, 0),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            ...groupedCategories.entries.map((entry) {
+                              return _categorySection(
+                                entry.key,
+                                entry.value.map((cat) {
+                                  return _categoryItem(
+                                    cat['name'],
+                                    "${cat['caseCount']} cases",
+                                    Icons.book,
+                                  );
+                                }).toList(),
+                              );
+                            }),
+                            const SizedBox(height: 2),
+                          ],
                         ),
                       ),
-                      child: const Text(
-                        "Progress to case selection",
-                        style: TextStyle(fontSize: 16),
+                    ),
+                    // Fixed button at bottom
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(16, 0, 16, 30),
+                      child: ElevatedButton(
+                        onPressed:
+                            selectedCategory != null
+                                ? () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder:
+                                          (_) => CasesPage(
+                                            category: selectedCategory!,
+                                          ),
+                                    ),
+                                  );
+                                }
+                                : null,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.blue,
+                          foregroundColor: Colors.white,
+                          minimumSize: const Size(double.infinity, 50),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                        ),
+                        child: const Text(
+                          "Progress to case selection",
+                          style: TextStyle(fontSize: 16),
+                        ),
                       ),
                     ),
                   ],
@@ -134,12 +145,13 @@ class _CategoriesPageState extends State<CategoriesPage> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const SizedBox(height: 10),
+        const SizedBox(height: 12),
         Text(
           title,
           style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
         ),
-        Column(children: items),
+        const SizedBox(height: 8),
+        ...items,
       ],
     );
   }
@@ -154,7 +166,7 @@ class _CategoriesPageState extends State<CategoriesPage> {
         });
       },
       child: Container(
-        margin: const EdgeInsets.symmetric(vertical: 4),
+        margin: const EdgeInsets.symmetric(vertical: 6),
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
           color: isSelected ? Colors.green[200] : Colors.grey[200],

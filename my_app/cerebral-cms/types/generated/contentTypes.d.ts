@@ -529,6 +529,39 @@ export interface ApiCheerleaderCheerleader extends Struct.CollectionTypeSchema {
   };
 }
 
+export interface ApiIncorrectFlowQuestionIncorrectFlowQuestion
+  extends Struct.CollectionTypeSchema {
+  collectionName: 'incorrect_flow_questions';
+  info: {
+    displayName: 'Incorrect Flow Question';
+    pluralName: 'incorrect-flow-questions';
+    singularName: 'incorrect-flow-question';
+  };
+  options: {
+    draftAndPublish: true;
+  };
+  attributes: {
+    correct_option: Schema.Attribute.Integer;
+    createdAt: Schema.Attribute.DateTime;
+    createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    flow_order: Schema.Attribute.Integer;
+    hint: Schema.Attribute.String;
+    locale: Schema.Attribute.String & Schema.Attribute.Private;
+    localizations: Schema.Attribute.Relation<
+      'oneToMany',
+      'api::incorrect-flow-question.incorrect-flow-question'
+    > &
+      Schema.Attribute.Private;
+    options: Schema.Attribute.JSON;
+    publishedAt: Schema.Attribute.DateTime;
+    Title: Schema.Attribute.String;
+    updatedAt: Schema.Attribute.DateTime;
+    updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+  };
+}
+
 export interface ApiPlaySessionPlaySession extends Struct.CollectionTypeSchema {
   collectionName: 'play_sessions';
   info: {
@@ -1107,6 +1140,7 @@ declare module '@strapi/strapi' {
       'api::case.case': ApiCaseCase;
       'api::category.category': ApiCategoryCategory;
       'api::cheerleader.cheerleader': ApiCheerleaderCheerleader;
+      'api::incorrect-flow-question.incorrect-flow-question': ApiIncorrectFlowQuestionIncorrectFlowQuestion;
       'api::play-session.play-session': ApiPlaySessionPlaySession;
       'api::prompt-image.prompt-image': ApiPromptImagePromptImage;
       'plugin::content-releases.release': PluginContentReleasesRelease;

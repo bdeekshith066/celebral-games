@@ -1,0 +1,29 @@
+{
+    "kind": "collectionType",
+    "collectionName": "incorrect_flow_questions",
+    "info": {
+        "singularName": "incorrect-flow-question",
+        "pluralName": "incorrect-flow-questions",
+        "displayName": "Incorrect Flow Question"
+    },
+    "options": {
+        "draftAndPublish": true
+    },
+    "attributes": {
+        "Title": {
+            "type": "string"
+        },
+        "options": {
+            "type": "json"
+        },
+        "correct_option": {
+            "type": "integer"
+        },
+        "hint": {
+            "type": "string"
+        },
+        "flow_order": {
+            "type": "integer"
+        }
+    }
+}

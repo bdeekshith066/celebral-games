@@ -1,0 +1,24 @@
+{
+  "collectionName": "components_shared_incorrect_flow_questions",
+  "info": {
+    "displayName": "Incorrect Flow Question"
+  },
+  "options": {},
+  "attributes": {
+    "Title": {
+      "type": "string"
+    },
+    "options": {
+      "type": "json"
+    },
+    "correct_option": {
+      "type": "integer"
+    },
+    "flow_order": {
+      "type": "integer"
+    },
+    "hint": {
+      "type": "string"
+    }
+  }
+}

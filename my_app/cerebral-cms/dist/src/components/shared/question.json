@@ -1,7 +1,8 @@
 {
     "collectionName": "components_shared_questions",
     "info": {
-        "displayName": "question"
+        "displayName": "question",
+        "description": ""
     },
     "options": {},
     "attributes": {
@@ -16,6 +17,20 @@
         },
         "hint": {
             "type": "string"
+        },
+        "incorrect_flows": {
+            "type": "component",
+            "repeatable": true,
+            "component": "shared.incorrect-flow-question"
+        },
+        "is_rabbit_entry_point": {
+            "type": "boolean"
+        },
+        "max_attempts": {
+            "type": "integer"
+        },
+        "return_to_main_flow_on_completion": {
+            "type": "boolean"
         }
     }
 }

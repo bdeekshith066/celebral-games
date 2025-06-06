@@ -1,7 +1,8 @@
 {
   "collectionName": "components_shared_incorrect_flow_questions",
   "info": {
-    "displayName": "Incorrect Flow Question"
+    "displayName": "Incorrect Flow Question",
+    "description": ""
   },
   "options": {},
   "attributes": {
@@ -19,6 +20,15 @@
     },
     "hint": {
       "type": "string"
+    },
+    "category": {
+      "type": "enumeration",
+      "enum": [
+        "Framework",
+        "Calculations",
+        "Brainstorming",
+        "Others"
+      ]
     }
   }
 }

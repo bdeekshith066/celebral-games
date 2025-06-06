@@ -502,6 +502,7 @@ export interface ApiCategoryCategory extends Struct.CollectionTypeSchema {
 export interface ApiCheerleaderCheerleader extends Struct.CollectionTypeSchema {
   collectionName: 'cheerleaders';
   info: {
+    description: '';
     displayName: 'cheerleader';
     pluralName: 'cheerleaders';
     singularName: 'cheerleader';
@@ -522,6 +523,7 @@ export interface ApiCheerleaderCheerleader extends Struct.CollectionTypeSchema {
     > &
       Schema.Attribute.Private;
     name: Schema.Attribute.String;
+    personaMessage: Schema.Attribute.Component<'shared.persona-message', true>;
     publishedAt: Schema.Attribute.DateTime;
     updatedAt: Schema.Attribute.DateTime;
     updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
@@ -533,6 +535,7 @@ export interface ApiIncorrectFlowQuestionIncorrectFlowQuestion
   extends Struct.CollectionTypeSchema {
   collectionName: 'incorrect_flow_questions';
   info: {
+    description: '';
     displayName: 'Incorrect Flow Question';
     pluralName: 'incorrect-flow-questions';
     singularName: 'incorrect-flow-question';
@@ -541,21 +544,16 @@ export interface ApiIncorrectFlowQuestionIncorrectFlowQuestion
     draftAndPublish: true;
   };
   attributes: {
-    correct_option: Schema.Attribute.Integer;
     createdAt: Schema.Attribute.DateTime;
     createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
-    flow_order: Schema.Attribute.Integer;
-    hint: Schema.Attribute.String;
     locale: Schema.Attribute.String & Schema.Attribute.Private;
     localizations: Schema.Attribute.Relation<
       'oneToMany',
       'api::incorrect-flow-question.incorrect-flow-question'
     > &
       Schema.Attribute.Private;
-    options: Schema.Attribute.JSON;
     publishedAt: Schema.Attribute.DateTime;
-    Title: Schema.Attribute.String;
     updatedAt: Schema.Attribute.DateTime;
     updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;

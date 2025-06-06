@@ -4,7 +4,8 @@
   "info": {
     "singularName": "cheerleader",
     "pluralName": "cheerleaders",
-    "displayName": "cheerleader"
+    "displayName": "cheerleader",
+    "description": ""
   },
   "options": {
     "draftAndPublish": true
@@ -17,14 +18,20 @@
       "type": "string"
     },
     "image": {
+      "type": "media",
+      "multiple": false,
+      "required": false,
       "allowedTypes": [
         "images",
         "files",
         "videos",
         "audios"
-      ],
-      "type": "media",
-      "multiple": false
+      ]
+    },
+    "personaMessage": {
+      "type": "component",
+      "repeatable": true,
+      "component": "shared.persona-message"
     }
   }
 }

@@ -31,6 +31,15 @@
         },
         "return_to_main_flow_on_completion": {
             "type": "boolean"
+        },
+        "category": {
+            "type": "enumeration",
+            "enum": [
+                "Framework",
+                "Calculations",
+                "Brainstorming",
+                "Others"
+            ]
         }
     }
 }

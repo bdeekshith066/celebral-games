@@ -1,0 +1,22 @@
+{
+    "collectionName": "components_shared_persona_messages",
+    "info": {
+        "displayName": "personaMessage"
+    },
+    "options": {},
+    "attributes": {
+        "Trigger": {
+            "type": "enumeration",
+            "enum": [
+                "start",
+                "slow_answer",
+                "fast_answer",
+                "three_correct",
+                "third_incorrect_flow"
+            ]
+        },
+        "messages": {
+            "type": "string"
+        }
+    }
+}

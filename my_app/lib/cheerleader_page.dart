@@ -16,7 +16,7 @@ class CheerleaderPage extends StatefulWidget {
 class _CheerleaderPageState extends State<CheerleaderPage> {
   List<Map<String, dynamic>> cheerleaders = [];
   String? selectedCheerleader;
-  String? selectedCheerleaderImage; // ✅ ADD THIS
+  String? selectedCheerleaderImage;
   bool isLoading = true;
 
   @override
@@ -40,6 +40,32 @@ class _CheerleaderPageState extends State<CheerleaderPage> {
         SnackBar(content: Text('❌ Failed to load cheerleaders: $e')),
       );
     }
+  }
+
+  Widget _buildCheerleaderImage(String? imageUrl) {
+    if (imageUrl == null) {
+      return const Icon(Icons.person, size: 50);
+    }
+
+    if (imageUrl.endsWith('.svg')) {
+      return SvgPicture.network(
+        imageUrl,
+        height: 50,
+        width: 50,
+        placeholderBuilder:
+            (context) => const CircularProgressIndicator(strokeWidth: 2),
+      );
+    }
+
+    return Image.network(
+      imageUrl,
+      height: 50,
+      width: 50,
+      fit: BoxFit.cover,
+      errorBuilder:
+          (_, __, ___) =>
+              const Icon(Icons.broken_image, size: 50, color: Colors.red),
+    );
   }
 
   @override
@@ -94,25 +120,18 @@ class _CheerleaderPageState extends State<CheerleaderPage> {
                                 color:
                                     isSelected
                                         ? Colors.green[200]
-                                        : Colors.grey[200],
+                                        : Colors.grey[300],
                                 borderRadius: BorderRadius.circular(10),
                               ),
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.center,
                                 children: [
-                                  cheerleader["imageUrl"] != null
-                                      ? SvgPicture.network(
-                                        cheerleader["imageUrl"]!,
-                                        height: 50,
-                                        width: 50,
-                                        placeholderBuilder:
-                                            (context) =>
-                                                const CircularProgressIndicator(),
-                                      )
-                                      : const Icon(Icons.person, size: 50),
+                                  _buildCheerleaderImage(
+                                    cheerleader["imageUrl"],
+                                  ),
                                   const SizedBox(height: 8),
                                   Text(
-                                    cheerleader["name"]!,
+                                    cheerleader["name"] ?? 'Unnamed',
                                     textAlign: TextAlign.center,
                                     style: const TextStyle(
                                       fontSize: 16,
@@ -121,7 +140,7 @@ class _CheerleaderPageState extends State<CheerleaderPage> {
                                   ),
                                   const SizedBox(height: 4),
                                   Text(
-                                    cheerleader["desc"]!,
+                                    cheerleader["desc"] ?? '',
                                     textAlign: TextAlign.center,
                                     style: const TextStyle(
                                       fontSize: 12,
@@ -146,10 +165,11 @@ class _CheerleaderPageState extends State<CheerleaderPage> {
                                     builder:
                                         (context) => CasePromptPage(
                                           selectedCase: widget.selectedCase,
+
                                           selectedCheerleader:
                                               selectedCheerleader!,
                                           selectedCheerleaderImage:
-                                              selectedCheerleaderImage!,
+                                              selectedCheerleaderImage ?? '',
                                         ),
                                   ),
                                 );

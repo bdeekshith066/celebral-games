@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+
 import 'gameplay_page.dart'; // Import the new page
 
 class OpeningPage extends StatelessWidget {
@@ -67,7 +68,7 @@ class OpeningPage extends StatelessWidget {
         ),
         style: ElevatedButton.styleFrom(
           foregroundColor: Colors.black,
-          backgroundColor: Colors.grey[200],
+          backgroundColor: Colors.grey[300],
           elevation: 0,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
         ),

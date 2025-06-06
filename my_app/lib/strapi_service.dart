@@ -3,49 +3,61 @@
 // fetch cheerleaders, create play sessions, create case results, and fetch prompt images.
 // The class uses the http package to make GET and POST requests to the Strapi API.ss
 // The methods return the data in a structured format, making it easy to use in the Flutter app.
-
 import 'dart:convert';
 
 import 'package:http/http.dart' as http;
 
 class StrapiService {
-  final String baseUrl = 'http://192.168.217.106:1337';
+  final String baseUrl = 'https://playful-chicken-f4698d50ca.strapiapp.com';
+  //final String baseUrl = 'http://192.168.19.106:1337';
 
   Future<List<Map<String, dynamic>>> fetchCasesByCategory(
     String categoryName,
   ) async {
+    final encoded = Uri.encodeComponent(categoryName);
     final url = Uri.parse(
-      '$baseUrl/api/cases?filters[category][name][\$eq]=$categoryName&populate=*',
+      '$baseUrl/api/cases?populate=category&filters[category][name][\$eq]=$encoded',
     );
+
     final response = await http.get(url);
     if (response.statusCode != 200) {
-      throw Exception("❌ Failed to load cases (${response.statusCode})");
+      throw Exception('Failed to fetch cases');
     }
+
     final decoded = jsonDecode(response.body);
-    if (decoded['data'] == null || decoded['data'] is! List) {
-      throw Exception("⚠️ Invalid response format");
-    }
     final List<dynamic> data = decoded['data'];
+
     return data.map<Map<String, dynamic>>((item) {
+      final category = item['category']?['name'] ?? 'Unknown';
+      final promptRaw = item['prompt'] ?? [];
+      final promptText =
+          promptRaw.isNotEmpty
+              ? promptRaw[0]['children'][0]['text']
+              : 'Prompt not available';
+
       return {
         'id': item['id'],
         'title': item['title'] ?? 'Untitled',
-        'score': item['score'] ?? 0,
-        'case_status': item['case_status'] ?? 'Not started',
-        'prompt': item['prompt'],
-        'difficulty': item['difficulty'] ?? 'easy',
+        'score': item['score'],
+        'case_status': item['case_status'],
+        'prompt': promptText,
+        'difficulty': item['difficulty'],
+        'category': category,
       };
     }).toList();
   }
 
   Future<List<Map<String, dynamic>>> fetchQuestionsByCaseId(int caseId) async {
     final url = Uri.parse(
-      '$baseUrl/api/cases?populate=*&filters[id][\$eq]=$caseId',
+      '$baseUrl/api/cases?filters[id][\$eq]=$caseId&populate[question][populate]=incorrect_flows',
     );
+
     final response = await http.get(url);
+
     if (response.statusCode == 200) {
       final data = jsonDecode(response.body);
       final questions = data['data'][0]['question'];
+
       return List<Map<String, dynamic>>.from(
         questions.map((q) {
           return {
@@ -54,6 +66,23 @@ class StrapiService {
             'options': List<String>.from(q['options'] ?? []),
             'correct_option': q['correct_option'] ?? 0,
             'hint': q['hint'] ?? '',
+            'category': q['category'] ?? 'Others',
+            'max_attempts': q['max_attempts'] ?? 2,
+            'return_to_main_flow_on_completion':
+                q['return_to_main_flow_on_completion'] ?? true,
+            'incorrect_flows': List<Map<String, dynamic>>.from(
+              (q['incorrect_flows'] ?? []).map(
+                (flow) => {
+                  'id': flow['id'],
+                  'Title': flow['Title'] ?? '',
+                  'options': List<String>.from(flow['options'] ?? []),
+                  'correct_option': flow['correct_option'] ?? 0,
+                  'hint': flow['hint'] ?? '',
+                  'flow_order': flow['flow_order'] ?? 0,
+                  'category': flow['category'] ?? 'Others',
+                },
+              ),
+            ),
           };
         }),
       );
@@ -190,11 +219,9 @@ class StrapiService {
     required String caseTitle,
     required int finalScore,
   }) async {
-    // Step 1: Fetch the case by title
     final urlFetch = Uri.parse(
       '$baseUrl/api/cases?filters[title][\$eq]=$caseTitle',
     );
-
     final fetchResponse = await http.get(urlFetch);
     final data = jsonDecode(fetchResponse.body);
 
@@ -202,10 +229,8 @@ class StrapiService {
       throw Exception('❌ Failed to fetch case by title');
     }
 
-    // Step 2: Extract the ID
     final int caseId = data['data'][0]['id'];
 
-    // Step 3: Update score and status using PUT
     final updateUrl = Uri.parse('$baseUrl/api/cases/$caseId');
     final updateResponse = await http.put(
       updateUrl,
@@ -226,7 +251,7 @@ class StrapiService {
     required int score,
     required String status,
   }) async {
-    final url = Uri.parse('$baseUrl/api/case-progresses'); // use correct plural
+    final url = Uri.parse('$baseUrl/api/case-progresses');
     final response = await http.post(
       url,
       headers: {"Content-Type": "application/json"},
@@ -262,5 +287,100 @@ class StrapiService {
       }
     }
     return null;
+  }
+
+  Future<int> fetchCaseCountForCategory(String categoryName) async {
+    final encodedCategory = Uri.encodeComponent(categoryName);
+    final url = Uri.parse(
+      '$baseUrl/api/cases?filters[category][name][\$eq]=$encodedCategory',
+    );
+    final response = await http.get(url);
+
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      return data['data'].length;
+    } else {
+      throw Exception('❌ Failed to fetch case count for $categoryName');
+    }
+  }
+
+  Future<List<Map<String, dynamic>>> fetchAllCheerleadersWithMessages() async {
+    final url = Uri.parse(
+      '$baseUrl/api/cheerleaders?populate=personaMessages,image',
+    );
+    final response = await http.get(url);
+
+    if (response.statusCode != 200) {
+      throw Exception('❌ Failed to load cheerleaders with messages');
+    }
+
+    final List data = jsonDecode(response.body)['data'];
+
+    return data.map<Map<String, dynamic>>((item) {
+      final imageData = item['image'];
+      final imageUrl = imageData != null ? imageData['url'] : null;
+
+      final messagesRaw = item['personaMessages'] ?? [];
+      final messages = List<Map<String, dynamic>>.from(
+        messagesRaw.map(
+          (m) => {'trigger': m['trigger'] ?? '', 'message': m['message'] ?? ''},
+        ),
+      );
+
+      return {
+        'name': item['name'] ?? 'Unnamed',
+        'desc': item['description'] ?? 'No description',
+        'imageUrl': imageUrl != null ? '$baseUrl$imageUrl' : null,
+        'personaMessages': messages,
+      };
+    }).toList();
+  }
+
+  Future<Map<String, List<String>>> fetchCheerleaderMessages(
+    String cheerleaderName,
+  ) async {
+    final response = await http.get(
+      Uri.parse(
+        'http://your-strapi-url/api/cheerleaders?populate=personaMessage',
+      ),
+    );
+
+    if (response.statusCode == 200) {
+      final jsonData = jsonDecode(response.body);
+
+      final cheerleader = jsonData['data'].firstWhere(
+        (c) => c['attributes']['name'] == cheerleaderName,
+        orElse: () => null,
+      );
+
+      if (cheerleader == null) return {};
+
+      final messagesList = cheerleader['attributes']['personaMessage'] as List;
+
+      return {
+        for (var m in messagesList)
+          m['trigger']:
+              (m['messages'] as String)
+                  .split(',')
+                  .map((s) => s.trim())
+                  .toList(),
+      };
+    } else {
+      throw Exception('Failed to load cheerleader messages');
+    }
+  }
+
+  Future<Map<String, dynamic>> fetchCheerleaderByName(String name) async {
+    final url = Uri.parse(
+      "http://localhost:1337/api/cheerleaders?filters[name][\$eq]=$name&populate=personaMessages",
+    );
+    final response = await http.get(url);
+
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      return data['data'].isNotEmpty ? data['data'][0]['attributes'] : {};
+    } else {
+      throw Exception("Failed to fetch cheerleader by name");
+    }
   }
 }

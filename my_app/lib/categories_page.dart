@@ -3,7 +3,8 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 
-import 'cases_page.dart'; // Your next screen
+import 'cases_page.dart';
+import 'strapi_service.dart';
 
 class CategoriesPage extends StatefulWidget {
   const CategoriesPage({super.key});
@@ -17,7 +18,7 @@ class _CategoriesPageState extends State<CategoriesPage> {
   Map<String, List<Map<String, dynamic>>> groupedCategories = {};
   bool isLoading = true;
 
-  final String baseUrl = 'http://192.168.0.145:1337';
+  final StrapiService _strapiService = StrapiService();
 
   @override
   void initState() {
@@ -27,11 +28,12 @@ class _CategoriesPageState extends State<CategoriesPage> {
 
   Future<void> fetchCategories() async {
     try {
-      final response = await http.get(Uri.parse('$baseUrl/api/categories'));
+      final response = await http.get(
+        Uri.parse('${_strapiService.baseUrl}/api/categories'),
+      );
 
       if (response.statusCode == 200) {
         final List<dynamic> data = jsonDecode(response.body)['data'];
-
         final Map<String, List<Map<String, dynamic>>> grouped = {};
 
         for (var item in data) {
@@ -39,11 +41,15 @@ class _CategoriesPageState extends State<CategoriesPage> {
           final group = item['description'] ?? 'Other';
           final id = item['id'];
 
+          final caseCount = await _strapiService.fetchCaseCountForCategory(
+            name,
+          );
+
           if (!grouped.containsKey(group)) {
             grouped[group] = [];
           }
 
-          grouped[group]!.add({'name': name, 'id': id, 'caseCount': 3});
+          grouped[group]!.add({'name': name, 'id': id, 'caseCount': caseCount});
         }
 
         if (!mounted) return;
@@ -57,9 +63,9 @@ class _CategoriesPageState extends State<CategoriesPage> {
     } catch (e) {
       if (!mounted) return;
       setState(() => isLoading = false);
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text("Error fetching categories: $e")));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("❌ Error fetching categories: $e")),
+      );
     }
   }
 
@@ -77,65 +83,88 @@ class _CategoriesPageState extends State<CategoriesPage> {
           isLoading
               ? const Center(child: CircularProgressIndicator())
               : SafeArea(
-                child: Column(
-                  children: [
-                    // Scrollable content
-                    Expanded(
-                      child: SingleChildScrollView(
-                        padding: const EdgeInsets.fromLTRB(16, 0, 16, 0),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            ...groupedCategories.entries.map((entry) {
-                              return _categorySection(
-                                entry.key,
-                                entry.value.map((cat) {
-                                  return _categoryItem(
-                                    cat['name'],
-                                    "${cat['caseCount']} cases",
-                                    Icons.book,
-                                  );
-                                }).toList(),
-                              );
-                            }),
-                            const SizedBox(height: 2),
-                          ],
+                child: LayoutBuilder(
+                  builder: (context, constraints) {
+                    return SingleChildScrollView(
+                      child: ConstrainedBox(
+                        constraints: BoxConstraints(
+                          minHeight: constraints.maxHeight,
                         ),
-                      ),
-                    ),
-                    // Fixed button at bottom
-                    Padding(
-                      padding: const EdgeInsets.fromLTRB(16, 0, 16, 30),
-                      child: ElevatedButton(
-                        onPressed:
-                            selectedCategory != null
-                                ? () {
-                                  Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder:
-                                          (_) => CasesPage(
-                                            category: selectedCategory!,
-                                          ),
+                        child: IntrinsicHeight(
+                          child: Column(
+                            children: [
+                              Expanded(
+                                child: Padding(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 16,
+                                  ),
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      const SizedBox(height: 12),
+                                      ...groupedCategories.entries.map((entry) {
+                                        return _categorySection(
+                                          entry.key,
+                                          entry.value.map((cat) {
+                                            return _categoryItem(
+                                              cat['name'],
+                                              "${cat['caseCount']} cases",
+                                              Icons.book,
+                                            );
+                                          }).toList(),
+                                        );
+                                      }),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                              Padding(
+                                padding: const EdgeInsets.fromLTRB(
+                                  16,
+                                  0,
+                                  16,
+                                  30,
+                                ),
+                                child: ElevatedButton(
+                                  onPressed:
+                                      selectedCategory != null
+                                          ? () {
+                                            Navigator.push(
+                                              context,
+                                              MaterialPageRoute(
+                                                builder:
+                                                    (_) => CasesPage(
+                                                      category:
+                                                          selectedCategory!,
+                                                    ),
+                                              ),
+                                            );
+                                          }
+                                          : null,
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: Colors.blue,
+                                    foregroundColor: Colors.white,
+                                    minimumSize: const Size(
+                                      double.infinity,
+                                      50,
                                     ),
-                                  );
-                                }
-                                : null,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.blue,
-                          foregroundColor: Colors.white,
-                          minimumSize: const Size(double.infinity, 50),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                  ),
+                                  child: const Text(
+                                    "Progress to case selection",
+                                    style: TextStyle(fontSize: 16),
+                                  ),
+                                ),
+                              ),
+                            ],
                           ),
                         ),
-                        child: const Text(
-                          "Progress to case selection",
-                          style: TextStyle(fontSize: 16),
-                        ),
                       ),
-                    ),
-                  ],
+                    );
+                  },
                 ),
               ),
     );
@@ -169,7 +198,7 @@ class _CategoriesPageState extends State<CategoriesPage> {
         margin: const EdgeInsets.symmetric(vertical: 6),
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
-          color: isSelected ? Colors.green[200] : Colors.grey[200],
+          color: isSelected ? Colors.green[200] : Colors.grey[300],
           borderRadius: BorderRadius.circular(10),
         ),
         child: Row(

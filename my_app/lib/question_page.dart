@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
@@ -32,17 +33,49 @@ class _QuestionsPageState extends State<QuestionsPage> {
   int correctAnswers = 0;
   int hintsViewed = 0;
   Stopwatch stopwatch = Stopwatch();
+  Stopwatch questionStopwatch = Stopwatch();
   int remainingTime = 400;
   List<Map<String, dynamic>> selectedAnswers = [];
-
+  bool viewOnlyMode = false;
+  List<dynamic> savedSelectedAnswers = [];
+  String cheerleaderMessage = "";
+  Map<String, List<String>> cheerleaderTriggers = {};
+  int correctStreak = 0;
+  int incorrectStreak = 0;
+  bool showMistakeNotification = false;
   late Timer countdownTimer;
+  int lastQuestionElapsed = 0;
+  String floatingNotification = "";
+  bool showFloatingNotification = false;
+
+  Map<String, int> categoryTotal = {
+    "Framework": 0,
+    "Calculations": 0,
+    "Brainstorming": 0,
+    "Others": 0,
+  };
+
+  Map<String, int> categoryCorrect = {
+    "Framework": 0,
+    "Calculations": 0,
+    "Brainstorming": 0,
+    "Others": 0,
+  };
+
+  Map<String, int> categoryIncorrect = {
+    "Framework": 0,
+    "Calculations": 0,
+    "Brainstorming": 0,
+    "Others": 0,
+  };
 
   @override
   void initState() {
     super.initState();
     fetchQuestions();
+    fetchBarnieTriggers(); // 👈 Add this
     stopwatch.start();
-    remainingTime = 400;
+    questionStopwatch.start();
     countdownTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
       if (!mounted) return;
       setState(() {
@@ -55,82 +88,16 @@ class _QuestionsPageState extends State<QuestionsPage> {
     });
   }
 
-  Future<void> fetchQuestions() async {
-    final caseId = widget.selectedCase['id'];
-    try {
-      final data = await StrapiService().fetchQuestionsByCaseId(caseId);
-      if (!mounted) return;
-      setState(() {
-        questions = data;
-        isLoading = false;
-      });
-    } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('❌ Error loading questions: $e')));
-    }
-  }
-
-  Future<void> nextOrSubmit() async {
-    final currentQuestion = questions[currentQuestionIndex];
-    final isCorrect = selectedAnswerIndex == currentQuestion['correct_option'];
-
-    if (isCorrect) {
-      correctAnswers++;
-    }
-    selectedAnswers.add({
-      'question': currentQuestion['text'],
-      'selected_index': selectedAnswerIndex,
-      'selected_option': currentQuestion['options'][selectedAnswerIndex ?? 0],
-      'correct_option':
-          currentQuestion['options'][currentQuestion['correct_option']],
+  void showTemporaryNotification(String message) {
+    setState(() {
+      floatingNotification = message;
+      showFloatingNotification = true;
     });
-
-    if (currentQuestionIndex < questions.length - 2) {
-      setState(() {
-        currentQuestionIndex++;
-        selectedAnswerIndex = null;
-        showHintBox = false;
-        showFullHint = false;
-      });
-    } else {
-      stopwatch.stop(); // Stop the timer
-      int timeUsed = stopwatch.elapsed.inSeconds;
-      int finalScore = 400 - timeUsed - (5 * hintsViewed);
-
-      await StrapiService().createPlaySession(
-        cheerleader: widget.selectedCheerleader,
-        caseTitle: widget.selectedCase['title'],
-        startedAt: DateTime.now(),
-        userEmail: "bdeekshith6@gmail.com", // Replace later with real user
-        score: finalScore,
-        completed: true,
-        selectedAnswers: selectedAnswers,
-      );
-
-      await StrapiService().saveCaseProgress(
-        caseTitle: widget.selectedCase['title'],
-        userEmail: "bdeekshith6@gmail.com", // replace later
-        score: finalScore,
-        status: "Completed",
-      );
-
-      // Submit directly — don't increment index
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(
-          builder:
-              (_) => CaseResultsPage(
-                selectedCase: widget.selectedCase,
-                selectedCheerleader: widget.selectedCheerleader,
-                selectedCheerleaderImage: widget.selectedCheerleaderImage,
-                scoreTotal: finalScore,
-                scoreOutOf: 400,
-              ),
-        ),
-      );
-    }
+    Future.delayed(const Duration(seconds: 3), () {
+      if (mounted) {
+        setState(() => showFloatingNotification = false);
+      }
+    });
   }
 
   void autoSubmitDueToTimeout() {
@@ -145,15 +112,210 @@ class _QuestionsPageState extends State<QuestionsPage> {
               selectedCheerleaderImage: widget.selectedCheerleaderImage,
               scoreTotal: 0,
               scoreOutOf: 400,
+              categoryTotal: categoryTotal,
+              categoryCorrect: categoryCorrect,
+              categoryIncorrect: categoryIncorrect,
             ),
       ),
     );
   }
 
-  @override
-  void dispose() {
-    countdownTimer.cancel();
-    super.dispose();
+  void showCheerleaderMessage(String trigger) {
+    final messages = cheerleaderTriggers[trigger];
+    if (messages != null && messages.isNotEmpty) {
+      setState(() {
+        cheerleaderMessage = messages[Random().nextInt(messages.length)];
+      });
+    } else {
+      setState(() {
+        cheerleaderMessage = "";
+      });
+    }
+  }
+
+  void showTemporaryNotificationFromTrigger(String trigger) {
+    final messages = cheerleaderTriggers[trigger];
+    if (messages != null && messages.isNotEmpty) {
+      final message = messages[Random().nextInt(messages.length)];
+      setState(() {
+        floatingNotification = message;
+        showFloatingNotification = true;
+      });
+
+      Future.delayed(const Duration(seconds: 3), () {
+        if (mounted) {
+          setState(() {
+            floatingNotification = "";
+            showFloatingNotification = false;
+          });
+        }
+      });
+    }
+  }
+
+  Future<void> fetchBarnieTriggers() async {
+    try {
+      final response = await StrapiService().fetchCheerleaderByName(
+        "Barnie Sunders",
+      );
+      final messages = response['personaMessages'] ?? [];
+
+      Map<String, List<String>> triggers = {};
+      for (var msg in messages) {
+        final trigger = msg['trigger'];
+        final text = msg['messages'];
+        if (trigger != null && text != null) {
+          triggers.putIfAbsent(trigger, () => []).add(text);
+        }
+      }
+
+      if (mounted) {
+        setState(() {
+          cheerleaderTriggers = triggers;
+          showCheerleaderMessage("start"); // Show welcome message if exists
+        });
+      }
+    } catch (e) {
+      print("Error loading Barnie messages: $e");
+    }
+  }
+
+  Future<void> nextOrSubmit() async {
+    final currentQuestion = questions[currentQuestionIndex];
+    final isCorrect = selectedAnswerIndex == currentQuestion['correct_option'];
+
+    // Analyze time taken to answer the question
+    int timeTaken = questionStopwatch.elapsed.inSeconds;
+    questionStopwatch.reset();
+    questionStopwatch.start();
+
+    // Trigger floating notification
+
+    if (timeTaken >= 20) {
+      showTemporaryNotificationFromTrigger("slow_answer");
+    } else if (timeTaken <= 5) {
+      showTemporaryNotificationFromTrigger("fast_answer");
+    }
+
+    if (isCorrect) {
+      correctStreak++;
+      incorrectStreak = 0;
+      if (correctStreak == 3) {
+        showTemporaryNotificationFromTrigger("three_correct");
+        correctStreak = 0;
+      }
+    } else {
+      incorrectStreak++;
+      correctStreak = 0;
+      if (incorrectStreak == 3) {
+        showTemporaryNotificationFromTrigger("third_incorrect_flow");
+      }
+    }
+
+    // Score tracking per category
+    final rawCategory =
+        (currentQuestion['category'] ?? '').toString().toLowerCase().trim();
+    final categoryKey = switch (rawCategory) {
+      'framework' => 'Framework',
+      'calculations' => 'Calculations',
+      'brainstorming' => 'Brainstorming',
+      _ => 'Others',
+    };
+
+    categoryTotal[categoryKey] = (categoryTotal[categoryKey] ?? 0) + 1;
+    if (isCorrect) {
+      categoryCorrect[categoryKey] = (categoryCorrect[categoryKey] ?? 0) + 1;
+    } else {
+      categoryIncorrect[categoryKey] =
+          (categoryIncorrect[categoryKey] ?? 0) + 1;
+    }
+
+    // Save selected answer
+    selectedAnswers.add({
+      'question': currentQuestion['text'],
+      'selected': selectedAnswerIndex,
+      'correct': currentQuestion['correct_option'],
+    });
+
+    // Go to next question or submit
+    if (currentQuestionIndex < questions.length - 2) {
+      setState(() {
+        currentQuestionIndex++;
+        selectedAnswerIndex = null;
+        showHintBox = false;
+        showFullHint = false;
+      });
+    } else {
+      stopwatch.stop();
+      int totalTimeUsed = stopwatch.elapsed.inSeconds;
+      int finalScore = 400 - totalTimeUsed - (5 * hintsViewed);
+
+      await StrapiService().createPlaySession(
+        cheerleader: widget.selectedCheerleader,
+        caseTitle: widget.selectedCase['title'],
+        startedAt: DateTime.now(),
+        userEmail: "bdeekshith6@gmail.com",
+        score: finalScore,
+        completed: true,
+        selectedAnswers: selectedAnswers,
+      );
+
+      await StrapiService().saveCaseProgress(
+        caseTitle: widget.selectedCase['title'],
+        userEmail: "bdeekshith6@gmail.com",
+        score: finalScore,
+        status: "Completed",
+      );
+
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder:
+              (_) => CaseResultsPage(
+                selectedCase: widget.selectedCase,
+                selectedCheerleader: widget.selectedCheerleader,
+                selectedCheerleaderImage: widget.selectedCheerleaderImage,
+                scoreTotal: finalScore,
+                scoreOutOf: 400,
+                categoryTotal: categoryTotal,
+                categoryCorrect: categoryCorrect,
+                categoryIncorrect: categoryIncorrect,
+              ),
+        ),
+      );
+    }
+  }
+
+  Future<void> fetchQuestions() async {
+    final caseId = widget.selectedCase['id'];
+    try {
+      final data = await StrapiService().fetchQuestionsByCaseId(caseId);
+      final session = await StrapiService().fetchPlaySession(
+        caseTitle: widget.selectedCase['title'],
+        userEmail: "bdeekshith6@gmail.com",
+      );
+
+      bool alreadyCompleted = session?['completed'] == true;
+
+      if (!mounted) return;
+
+      setState(() {
+        questions = data;
+        isLoading = false;
+        viewOnlyMode = alreadyCompleted;
+        savedSelectedAnswers = session?['selected_answer'] ?? [];
+      });
+
+      if (alreadyCompleted) {
+        stopwatch.stop();
+        countdownTimer.cancel();
+      }
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('❌ Error loading questions: $e')));
+    }
   }
 
   @override
@@ -176,121 +338,209 @@ class _QuestionsPageState extends State<QuestionsPage> {
           onPressed: () => Navigator.pop(context),
         ),
       ),
-      body: Stack(
+      body: Column(
         children: [
-          Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Hint first
-                if (showFullHint)
-                  _expandedHint(current['hint'])
-                else if (showHintBox)
-                  Align(
-                    alignment: Alignment.centerRight,
-                    child: _collapsedHint(),
-                  )
-                else
-                  Align(alignment: Alignment.centerRight, child: _hintButton()),
-
-                const SizedBox(height: 20),
-
-                Text(
-                  current['text'] ?? '',
-                  style: const TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                const SizedBox(height: 20),
-
-                ...List.generate(current['options'].length, (index) {
-                  final option = current['options'][index];
-                  return GestureDetector(
-                    onTap: () {
-                      setState(() => selectedAnswerIndex = index);
-                    },
-                    child: Container(
-                      margin: const EdgeInsets.symmetric(vertical: 6),
-                      width: double.infinity,
-                      padding: const EdgeInsets.all(14),
-                      decoration: BoxDecoration(
-                        color:
-                            selectedAnswerIndex == index
-                                ? Colors.yellow[300]
-                                : Colors.grey[200],
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Text(option, style: const TextStyle(fontSize: 16)),
+          Expanded(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  if (showFullHint)
+                    _expandedHint(current['hint'])
+                  else if (showHintBox)
+                    Align(
+                      alignment: Alignment.centerRight,
+                      child: _collapsedHint(),
+                    )
+                  else
+                    Align(
+                      alignment: Alignment.centerRight,
+                      child: _hintButton(),
                     ),
-                  );
-                }),
 
-                const SizedBox(height: 30),
+                  const SizedBox(height: 15),
 
-                // Cheerleader below options
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.end,
-                  children: [
-                    Flexible(
+                  Text(
+                    current['text'] ?? '',
+                    style: const TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 15),
+
+                  ...List.generate(current['options'].length, (index) {
+                    final option = current['options'][index];
+                    return GestureDetector(
+                      onTap: () {
+                        setState(() => selectedAnswerIndex = index);
+                      },
                       child: Container(
-                        padding: const EdgeInsets.all(12),
+                        margin: const EdgeInsets.symmetric(vertical: 6),
+                        width: double.infinity,
+                        padding: const EdgeInsets.all(14),
                         decoration: BoxDecoration(
-                          color: Colors.blue,
-                          borderRadius: BorderRadius.circular(20),
+                          color:
+                              selectedAnswerIndex == index
+                                  ? Colors.yellow[300]
+                                  : Colors.grey[200],
+                          borderRadius: BorderRadius.circular(8),
                         ),
                         child: Text(
-                          widget.selectedCheerleader,
-                          overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 16,
-                          ),
+                          option,
+                          style: const TextStyle(fontSize: 16),
                         ),
                       ),
-                    ),
-                    const SizedBox(width: 10),
-                    if (widget.selectedCheerleaderImage.endsWith(".svg"))
-                      SvgPicture.network(
-                        widget.selectedCheerleaderImage,
-                        width: 50,
-                        height: 50,
-                        placeholderBuilder:
-                            (_) => const CircularProgressIndicator(),
+                    );
+                  }),
+
+                  const SizedBox(
+                    height: 5,
+                  ), // Adds space so content doesn't get hidden under fixed footer
+                ],
+              ),
+            ),
+          ),
+          // 🔽 Fixed Notification Section
+          Container(
+            width: double.infinity,
+            height: 50,
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: AnimatedSwitcher(
+              duration: const Duration(milliseconds: 300),
+              child:
+                  showFloatingNotification
+                      ? Container(
+                        key: ValueKey(floatingNotification),
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: Colors.orange[100],
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: Text(
+                          floatingNotification,
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
                       )
-                    else
-                      Image.network(
-                        widget.selectedCheerleaderImage,
-                        width: 50,
-                        height: 50,
-                        fit: BoxFit.contain,
-                      ),
-                  ],
+                      : const SizedBox.shrink(),
+            ),
+          ),
+
+          // 🔽 Fixed Cheerleader Section
+          Container(
+            width: double.infinity,
+            height: 70,
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                // 💬 Cheerleader Message Box
+                Expanded(
+                  child:
+                      cheerleaderMessage.isNotEmpty
+                          ? Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 8,
+                            ),
+                            decoration: BoxDecoration(
+                              color: Colors.blue[50],
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Text(
+                              "💬 $cheerleaderMessage",
+                              style: const TextStyle(
+                                fontSize: 15,
+                                fontWeight: FontWeight.w500,
+                                color: Colors.black87,
+                              ),
+                              overflow: TextOverflow.ellipsis,
+                              maxLines: 2,
+                            ),
+                          )
+                          : const SizedBox.shrink(),
                 ),
 
-                const SizedBox(height: 30),
+                const SizedBox(width: 10),
 
-                ElevatedButton(
-                  onPressed: selectedAnswerIndex != null ? nextOrSubmit : null,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.blue,
-                    foregroundColor: Colors.white,
-                    minimumSize: const Size(double.infinity, 50),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
+                // 🎓 Cheerleader Name
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 8,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Colors.blue,
+                    borderRadius: BorderRadius.circular(20),
                   ),
                   child: Text(
-                    currentQuestionIndex == questions.length - 1
-                        ? "Submit"
-                        : "Next",
-                    style: const TextStyle(fontSize: 16),
+                    widget.selectedCheerleader,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                 ),
-                const SizedBox(height: 25),
-                Center(
-                  child: Column(
+
+                const SizedBox(width: 8),
+
+                // 🖼 Cheerleader Image (SVG or PNG)
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(25),
+                  child:
+                      widget.selectedCheerleaderImage.endsWith(".svg")
+                          ? SvgPicture.network(
+                            widget.selectedCheerleaderImage,
+                            width: 50,
+                            height: 50,
+                            placeholderBuilder:
+                                (_) => const CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                ),
+                          )
+                          : Image.network(
+                            widget.selectedCheerleaderImage,
+                            width: 50,
+                            height: 50,
+                            fit: BoxFit.cover,
+                          ),
+                ),
+              ],
+            ),
+          ),
+
+          // Fixed bottom: Button and timer
+          SafeArea(
+            top: false,
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 20),
+              child: Column(
+                children: [
+                  ElevatedButton(
+                    onPressed:
+                        selectedAnswerIndex != null ? nextOrSubmit : null,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.blue,
+                      foregroundColor: Colors.white,
+                      minimumSize: const Size(double.infinity, 50),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ),
+                    child: Text(
+                      currentQuestionIndex == questions.length - 1
+                          ? "Submit"
+                          : "Next",
+                      style: const TextStyle(fontSize: 16),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  Column(
                     children: [
                       Container(
                         padding: const EdgeInsets.symmetric(
@@ -316,8 +566,8 @@ class _QuestionsPageState extends State<QuestionsPage> {
                       ),
                     ],
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         ],
@@ -330,10 +580,9 @@ class _QuestionsPageState extends State<QuestionsPage> {
       onTap: () {
         setState(() {
           showHintBox = true;
-          hintsViewed++; // INCREMENT HINT COUNTER
+          hintsViewed++;
         });
       },
-
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
         decoration: BoxDecoration(

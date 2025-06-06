@@ -9,6 +9,9 @@ class CaseResultsPage extends StatelessWidget {
   final int scoreTotal;
   final int scoreOutOf;
   final String selectedCheerleaderImage;
+  final Map<String, int> categoryTotal;
+  final Map<String, int> categoryCorrect;
+  final Map<String, int> categoryIncorrect;
 
   const CaseResultsPage({
     super.key,
@@ -17,6 +20,9 @@ class CaseResultsPage extends StatelessWidget {
     required this.scoreTotal,
     required this.scoreOutOf,
     required this.selectedCheerleaderImage,
+    required this.categoryTotal,
+    required this.categoryCorrect,
+    required this.categoryIncorrect,
   });
 
   @override
@@ -40,9 +46,9 @@ class CaseResultsPage extends StatelessWidget {
           children: [
             const Text(
               "🎉 Great job! Here's your result:",
-              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+              style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
             ),
-            const SizedBox(height: 30),
+            const SizedBox(height: 45),
 
             // Score Summary Box
             Container(
@@ -56,30 +62,31 @@ class CaseResultsPage extends StatelessWidget {
                 children: [
                   Text(
                     "Case: ${selectedCase['title']}",
-                    style: const TextStyle(fontSize: 18),
+                    style: const TextStyle(fontSize: 20),
                   ),
-                  const SizedBox(height: 10),
+                  const SizedBox(height: 18),
                   Text(
                     "Cheerleader: $selectedCheerleader",
-                    style: const TextStyle(fontSize: 18),
+                    style: const TextStyle(fontSize: 20),
                   ),
-                  const SizedBox(height: 10),
+                  const SizedBox(height: 18),
                   Text(
                     "Your score: $scoreTotal / $scoreOutOf",
-                    style: const TextStyle(fontSize: 18),
+                    style: const TextStyle(fontSize: 20),
                   ),
+                  const SizedBox(height: 18),
                 ],
               ),
             ),
 
-            const SizedBox(height: 40),
+            const SizedBox(height: 60),
 
             // Score Indicator Bar
             Stack(
               clipBehavior: Clip.none,
               children: [
                 Container(
-                  height: 20,
+                  height: 36, // Thicker bar
                   width: double.infinity,
                   decoration: BoxDecoration(
                     gradient: const LinearGradient(
@@ -90,7 +97,7 @@ class CaseResultsPage extends StatelessWidget {
                 ),
                 Positioned(
                   left: arrowPosition.clamp(0, barWidth - 20),
-                  top: -24,
+                  top: -30, // Adjusted for thicker bar
                   child: const Icon(
                     Icons.arrow_drop_down,
                     size: 36,
@@ -151,43 +158,37 @@ class CaseResultsPage extends StatelessWidget {
 
             const Spacer(),
 
-            // Share Button
-            Center(
-              child: ElevatedButton(
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder:
-                          (_) => FeedbackPage(
-                            caseTitle: selectedCase['title'],
-                            cheerleader: selectedCheerleader,
-                            scoreTotal: scoreTotal,
-                            scoreOutOf: scoreOutOf,
-                          ),
+            // View Feedback Button
+            Padding(
+              padding: const EdgeInsets.only(bottom: 20.0), // Moved up by 12px
+              child: Center(
+                child: ElevatedButton(
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder:
+                            (_) => FeedbackPage(
+                              categoryTotal: categoryTotal,
+                              categoryCorrect: categoryCorrect,
+                              categoryIncorrect: categoryIncorrect,
+                            ),
+                      ),
+                    );
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.blue,
+                    foregroundColor: Colors.white,
+                    minimumSize: const Size(double.infinity, 50),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
                     ),
-                  );
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.blue,
-                  foregroundColor: Colors.white,
-                  minimumSize: const Size(double.infinity, 50),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: const Text(
+                    "View Feedback",
+                    style: TextStyle(fontSize: 18),
                   ),
                 ),
-                child: const Text(
-                  "Share score",
-                  style: TextStyle(fontSize: 18),
-                ),
-              ),
-            ),
-            const SizedBox(height: 12),
-            Center(
-              child: Text(
-                "You can share your results on LinkedIn or other platforms. Your score will be private.",
-                textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 14, color: Colors.grey[600]),
               ),
             ),
           ],

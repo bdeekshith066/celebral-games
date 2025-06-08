@@ -108,7 +108,7 @@ class StrapiService {
       return {
         'name': item['name'] ?? 'Unnamed',
         'desc': item['description'] ?? 'No description',
-        'imageUrl': imageUrl != null ? '$baseUrl$imageUrl' : null,
+        'imageUrl': imageUrl,
       };
     }).toList();
   }
@@ -167,22 +167,6 @@ class StrapiService {
     if (response.statusCode != 200 && response.statusCode != 201) {
       throw Exception("Failed to create case result: ${response.body}");
     }
-  }
-
-  Future<String?> fetchPromptImageUrl() async {
-    final url = Uri.parse('$baseUrl/api/prompt-images?populate=pic');
-    final response = await http.get(url);
-
-    if (response.statusCode != 200) return null;
-
-    final data = jsonDecode(response.body)['data'];
-    if (data == null || data.isEmpty) return null;
-
-    final imageData = data[0]['attributes']['pic']['data'];
-    if (imageData == null) return null;
-
-    final imageUrl = imageData['attributes']['url'];
-    return '$baseUrl$imageUrl';
   }
 
   Future<Map<String, dynamic>?> fetchPlaySession({
@@ -382,5 +366,22 @@ class StrapiService {
     } else {
       throw Exception("Failed to fetch cheerleader by name");
     }
+  }
+
+  Future<String?> fetchPromptImageUrl() async {
+    final url = Uri.parse('$baseUrl/api/prompt-images?populate=pic');
+    final response = await http.get(url);
+
+    if (response.statusCode != 200) return null;
+
+    final data = jsonDecode(response.body)['data'];
+    if (data == null || data.isEmpty) return null;
+
+    final imageData = data[0]['pic'];
+    if (imageData == null || imageData['url'] == null) return null;
+
+    return imageData['url'].startsWith('http')
+        ? imageData['url']
+        : '$baseUrl${imageData['url']}';
   }
 }

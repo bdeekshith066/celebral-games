@@ -4,11 +4,10 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'question_page.dart';
 import 'strapi_service.dart';
 
-class CasePromptPage extends StatelessWidget {
+class CasePromptPage extends StatefulWidget {
   final Map<String, dynamic> selectedCase;
   final String selectedCheerleader;
   final String selectedCheerleaderImage;
-  final String baseUrl = 'https://playful-chicken-f4698d50ca.strapiapp.com';
 
   const CasePromptPage({
     super.key,
@@ -18,8 +17,31 @@ class CasePromptPage extends StatelessWidget {
   });
 
   @override
+  State<CasePromptPage> createState() => _CasePromptPageState();
+}
+
+class _CasePromptPageState extends State<CasePromptPage> {
+  String? promptImageUrl;
+  bool isLoadingImage = true;
+
+  @override
+  void initState() {
+    super.initState();
+    loadPromptImage();
+  }
+
+  Future<void> loadPromptImage() async {
+    final url = await StrapiService().fetchPromptImageUrl();
+    if (!mounted) return;
+    setState(() {
+      promptImageUrl = url;
+      isLoadingImage = false;
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final dynamic rawPrompt = selectedCase['prompt'];
+    final dynamic rawPrompt = widget.selectedCase['prompt'];
     String promptText = 'No prompt available.';
     if (rawPrompt is List && rawPrompt.isNotEmpty) {
       promptText = rawPrompt[0]['children'][0]['text'] ?? promptText;
@@ -37,21 +59,14 @@ class CasePromptPage extends StatelessWidget {
       ),
       body: Column(
         children: [
-          // Scrollable content
           Expanded(
             child: SingleChildScrollView(
-              padding: const EdgeInsets.fromLTRB(
-                20,
-                10,
-                20,
-                0,
-              ), // reduce top padding
+              padding: const EdgeInsets.fromLTRB(20, 10, 20, 0),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Case Title
                   Text(
-                    "Case: ${selectedCase['title'] ?? 'Untitled'}",
+                    "Case: ${widget.selectedCase['title'] ?? 'Untitled'}",
                     style: const TextStyle(
                       fontSize: 22,
                       fontWeight: FontWeight.bold,
@@ -59,20 +74,38 @@ class CasePromptPage extends StatelessWidget {
                   ),
                   const SizedBox(height: 20),
 
-                  // Case Prompt Image
-                  AspectRatio(
-                    aspectRatio: 4 / 3,
-                    child: SvgPicture.network(
-                      '$baseUrl/uploads/case_prompt_a778b6d986.svg',
-                      fit: BoxFit.cover,
-                      placeholderBuilder:
-                          (_) =>
-                              const Center(child: CircularProgressIndicator()),
-                    ),
-                  ),
+                  // Case Prompt Image (dynamic)
+                  if (isLoadingImage)
+                    const Center(child: CircularProgressIndicator())
+                  else if (promptImageUrl != null &&
+                      promptImageUrl!.endsWith('.svg'))
+                    AspectRatio(
+                      aspectRatio: 4 / 3,
+                      child: SvgPicture.network(
+                        promptImageUrl!,
+                        fit: BoxFit.cover,
+                        placeholderBuilder:
+                            (_) => const Center(
+                              child: CircularProgressIndicator(),
+                            ),
+                      ),
+                    )
+                  else if (promptImageUrl != null)
+                    AspectRatio(
+                      aspectRatio: 4 / 3,
+                      child: Image.network(
+                        promptImageUrl!,
+                        fit: BoxFit.cover,
+                        errorBuilder:
+                            (_, __, ___) =>
+                                const Center(child: Icon(Icons.broken_image)),
+                      ),
+                    )
+                  else
+                    const SizedBox.shrink(),
+
                   const SizedBox(height: 20),
 
-                  // Prompt Text
                   Text(
                     "Case prompt: $promptText",
                     style: const TextStyle(
@@ -105,11 +138,11 @@ class CasePromptPage extends StatelessWidget {
                         border: Border.all(color: Colors.black26),
                       ),
                       child:
-                          selectedCheerleaderImage.endsWith('.svg')
+                          widget.selectedCheerleaderImage.endsWith('.svg')
                               ? Padding(
                                 padding: const EdgeInsets.all(8),
                                 child: SvgPicture.network(
-                                  selectedCheerleaderImage,
+                                  widget.selectedCheerleaderImage,
                                   fit: BoxFit.contain,
                                   placeholderBuilder:
                                       (_) => const CircularProgressIndicator(),
@@ -117,7 +150,7 @@ class CasePromptPage extends StatelessWidget {
                               )
                               : ClipOval(
                                 child: Image.network(
-                                  selectedCheerleaderImage,
+                                  widget.selectedCheerleaderImage,
                                   fit: BoxFit.cover,
                                 ),
                               ),
@@ -129,8 +162,8 @@ class CasePromptPage extends StatelessWidget {
                     onPressed: () async {
                       try {
                         await StrapiService().createPlaySession(
-                          cheerleader: selectedCheerleader,
-                          caseTitle: selectedCase['title'] ?? 'Untitled',
+                          cheerleader: widget.selectedCheerleader,
+                          caseTitle: widget.selectedCase['title'] ?? 'Untitled',
                           startedAt: DateTime.now(),
                           userEmail: "bdeekshith6@gmail.com",
                         );
@@ -142,10 +175,11 @@ class CasePromptPage extends StatelessWidget {
                           MaterialPageRoute(
                             builder:
                                 (_) => QuestionsPage(
-                                  selectedCase: selectedCase,
-                                  selectedCheerleader: selectedCheerleader,
+                                  selectedCase: widget.selectedCase,
+                                  selectedCheerleader:
+                                      widget.selectedCheerleader,
                                   selectedCheerleaderImage:
-                                      selectedCheerleaderImage,
+                                      widget.selectedCheerleaderImage,
                                 ),
                           ),
                         );

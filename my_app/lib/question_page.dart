@@ -238,7 +238,7 @@ class _QuestionsPageState extends State<QuestionsPage> {
     });
 
     // Go to next question or submit
-    if (currentQuestionIndex < questions.length - 2) {
+    if (currentQuestionIndex < questions.length - 1) {
       setState(() {
         currentQuestionIndex++;
         selectedAnswerIndex = null;
